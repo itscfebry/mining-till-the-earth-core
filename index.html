@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#12141a">
+<title>Mining till Earth Core</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar" aria-label="Hasil tambang">
+    <h2 class="sb-head">Ore <b id="oreTotal">0</b></h2>
+    <ul id="oreList" class="rows"></ul>
+    <h2 class="sb-head sb-mat">Material</h2>
+    <ul id="matList" class="rows"></ul>
+  </aside>
+
+  <main id="stage">
+    <div id="view"><canvas id="game"></canvas></div>
+
+    <div id="hud">
+      <div class="chip" aria-live="off">
+        <div class="depth"><span id="depthVal">0</span><small>m</small></div>
+        <div class="meta"><span id="layerName">Permukaan</span><span class="rec">Rekor <b id="bestVal">0</b> m</span></div>
+      </div>
+      <div class="actions">
+        <button id="btnMute" class="iconbtn" aria-label="Suara"></button>
+        <button id="btnPause" class="iconbtn" aria-label="Jeda (P)" title="Jeda (P)"></button>
+      </div>
+    </div>
+
+    <div id="gauge" aria-hidden="true">
+      <div id="gaugeBar"></div>
+      <div id="bestMark"></div>
+      <div id="marker"></div>
+    </div>
+
+    <div id="banner" aria-live="polite"><strong id="bannerTitle"></strong><span id="bannerSub"></span></div>
+
+    <div id="controls">
+      <button class="dbtn up" data-dir="up" aria-label="Atas">▲</button>
+      <button class="dbtn left" data-dir="left" aria-label="Kiri">◀</button>
+      <button class="dbtn down" data-dir="down" aria-label="Bawah">▼</button>
+      <button class="dbtn right" data-dir="right" aria-label="Kanan">▶</button>
+    </div>
+
+    <div id="overlay" hidden><div id="panel" role="dialog" aria-modal="true"></div></div>
+  </main>
+</div>
+
+<!-- Urutan penting: data → core → game → render → ui → main. (Script biasa, bukan ES module, supaya bisa dibuka langsung dari file://) -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/data/materials.js"></script>
+<script src="js/data/layers.js"></script>
+<script src="js/core/storage.js"></script>
+<script src="js/core/audio.js"></script>
+<script src="js/core/input.js"></script>
+<script src="js/game/world.js"></script>
+<script src="js/game/inventory.js"></script>
+<script src="js/game/effects.js"></script>
+<script src="js/game/player.js"></script>
+<script src="js/render/textures.js"></script>
+<script src="js/render/renderer.js"></script>
+<script src="js/ui/hud.js"></script>
+<script src="js/game/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
