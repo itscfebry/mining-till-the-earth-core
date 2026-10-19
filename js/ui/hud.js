@@ -23,7 +23,7 @@
     li.addEventListener('click', () => M.Inventory.select(key));
     li.hidden = true;                      // baru muncul setelah item didapat
     const ic = M.Textures.icon(key);
-    ic.className = 'ico';
+    ic.classList.add('ico');
     const name = document.createElement('span'); name.className = 'name'; name.textContent = def.name;
     const cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = '0';
     li.append(ic, name, cnt);
@@ -47,7 +47,7 @@
       const def = { name: rc.tool !== undefined ? M.Tools.list[rc.tool].name : Mat.byKey[rc.out].name };
       const li = document.createElement('li');
       li.className = 'row craft off';
-      const ic = rc.tool !== undefined ? M.Textures.toolIcon(M.Tools.list[rc.tool]) : M.Textures.icon(rc.out); ic.className = 'ico';
+      const ic = rc.tool !== undefined ? M.Textures.toolIcon(M.Tools.list[rc.tool]) : M.Textures.icon(rc.out); ic.classList.add('ico');
       const name = document.createElement('span'); name.className = 'name'; name.innerHTML = def.name + '<small>' + costText(rc) + '</small>';
       li.title = 'Buat ' + def.name + ' (butuh ' + costText(rc) + ', dekat workbench)';
       li.append(ic, name);

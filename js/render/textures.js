@@ -105,7 +105,9 @@
       const arr = [];
       for (let v = 0; v < VARIANTS; v++) {
         const o = mk(T, T);
-        paintTile(o.x, T, def, U.mulberry32(def.id * 977 + v * 31 + 1));
+        const png = M.Assets.block[def.key];       // PNG bila ada, kalau tidak render js lama
+        if (png) o.x.drawImage(png, 0, 0, T, T);
+        else paintTile(o.x, T, def, U.mulberry32(def.id * 977 + v * 31 + 1));
         arr.push(o.c);
       }
       Tx.tiles[def.id] = arr;
@@ -147,13 +149,21 @@
   Tx.icon = function (key) {
     const def = Mat.byKey[key];
     const o = mk(16, 16);
-    paintTile(o.x, 16, def, U.mulberry32(def.id * 977 + 1));
+    // ore = item (assets/ores), lalu blok PNG, lalu render js lama
+    const itemPng = def.ore ? M.Assets.ore[key] : null;
+    const png = itemPng || M.Assets.block[key];
+    if (png) { o.x.drawImage(png, 0, 0, 16, 16); if (itemPng || def.style === 'bench') o.c.classList.add('item'); }
+    else paintTile(o.x, 16, def, U.mulberry32(def.id * 977 + 1));
     return o.c;
   };
+
+  // Gambar item yang dipegang pemain: ore memakai PNG item (transparan), selain itu tekstur blok
+  Tx.held = (key) => { const def = Mat.byKey[key]; return (def.ore && M.Assets.ore[key]) || Tx.tile(def.id, 0); };
 
   // Ikon pickaxe 16x16 untuk resep crafting: gagang kayu + kepala berwarna tier
   Tx.toolIcon = function (tool) {
     const o = mk(16, 16), x = o.x;
+    o.c.classList.add('item');
     x.fillStyle = '#8b6b4b';
     for (let i = 0; i < 10; i++) x.fillRect(3 + i, 13 - i, 2, 2);
     [[4, 5], [6, 3], [8, 2], [10, 3], [12, 5], [13, 7]].forEach((p, i) => {

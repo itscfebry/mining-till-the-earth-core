@@ -272,7 +272,7 @@
     const sel = M.Inventory.selected;
     if (sel) {
       const s = Math.round(5 * u);
-      ctx.drawImage(Tx.tile(Mat.byKey[sel].id, 0), Math.round(x + (f > 0 ? 7 : 0) * u), Math.round(y + 5.2 * u + bob), s, s);
+      ctx.drawImage(Tx.held(sel), Math.round(x + (f > 0 ? 7 : 0) * u), Math.round(y + 5.2 * u + bob), s, s);
       return;
     }
 

@@ -52,5 +52,8 @@ Sidebar, tekstur, teks melayang "+1 Gold", dan kilau otomatis ikut.
 - Pickaxe dibuat di crafting bench: 5 wood + 20 ore (hanya level berikutnya). Ore baru: tambahkan `tier` di `materials.js`, pickaxe & resepnya otomatis ikut.
 - Tekstur ore bergaya `style: 'crystal'` (cobalt, osmium) dan `'metal'` (titanium) ada di `render/textures.js`.
 
+## Tekstur PNG
+- `assets/blocks/<key>.png` (blok dunia) dan `assets/ores/<key>.png` (item ore di inventori & tangan, boleh transparan). Daftar nama: `assets/README.md`. Dimuat oleh `core/assets.js`; yang tidak ada memakai render lama di `render/textures.js`.
+
 ## Kontrol
 WASD / panah (tahan = jalan & gali terus) · P/Esc jeda · M suara · Sentuh: tahan jari ke arah tujuan, atau pakai tombol arah.

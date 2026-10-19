@@ -44,6 +44,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .row.craft .name small { display: block; font-weight: normal; font-size: 10px; opacity: .8; overflow: hidden; text-overflow: ellipsis; }
 .row.craft:hover { background: #e8d5b5; }
 .row.craft.off { opacity: .5; filter: saturate(.6); }
+.row .ico.item { box-shadow: none; border-radius: 0; }   /* ikon item transparan: tanpa kotak */
 .row.zero { opacity: .55; }
 .row.zero .ico { filter: grayscale(.8) brightness(.9); }
 .row.mat .name { color: var(--dim); }
