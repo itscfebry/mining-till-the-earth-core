@@ -17,10 +17,11 @@
   function makeRow(key, kind) {
     const def = Mat.byKey[key];
     const li = document.createElement('li');
-    li.className = 'row ' + kind + (kind === 'ore' ? ' zero' : '');
+    li.className = 'row ' + kind;
     li.dataset.key = key;
-    li.title = def.name;
-    if (kind === 'mat') li.hidden = true;
+    li.title = def.name + ' (klik: pilih)';
+    li.addEventListener('click', () => M.Inventory.select(key));
+    li.hidden = true;                      // baru muncul setelah item didapat
     const ic = M.Textures.icon(key);
     ic.className = 'ico';
     const name = document.createElement('span'); name.className = 'name'; name.textContent = def.name;
@@ -39,6 +40,34 @@
     });
     Mat.list.forEach((d) => { if (d && d.ore) el.oreList.appendChild(makeRow(d.key, 'ore')); });
     mats.forEach((k) => el.matList.appendChild(makeRow(k, 'mat')));
+  }
+
+  function buildCraft() {
+    M.Crafting.recipes.forEach((rc) => {
+      const def = { name: rc.tool !== undefined ? M.Tools.list[rc.tool].name : Mat.byKey[rc.out].name };
+      const li = document.createElement('li');
+      li.className = 'row craft off';
+      const ic = rc.tool !== undefined ? M.Textures.toolIcon(M.Tools.list[rc.tool]) : M.Textures.icon(rc.out); ic.className = 'ico';
+      const name = document.createElement('span'); name.className = 'name'; name.innerHTML = def.name + '<small>' + costText(rc) + '</small>';
+      li.title = 'Buat ' + def.name + ' (butuh ' + costText(rc) + ', dekat workbench)';
+      li.append(ic, name);
+      li.addEventListener('click', () => M.Crafting.craft(rc));
+      rc.li = li;
+      el.craftList.appendChild(li);
+    });
+  }
+  function costText(rc) { return Object.keys(rc.cost).map((k) => rc.cost[k] + ' ' + Mat.byKey[k].name).join(' + '); }
+  function refreshCraft() {
+    if (!el.craftList) return;
+    // resep muncul setelah pemain punya salah satu bahannya (atau hasilnya)
+    M.Crafting.recipes.forEach((rc) => {
+      const have = Object.keys(rc.cost).some((k) => M.Inventory.get(k)) || (rc.tool === undefined && M.Inventory.get(rc.out));
+      rc.li.hidden = !have || (rc.tool !== undefined && rc.tool !== M.Player.pick + 1);   // pickaxe: hanya level berikutnya
+      rc.li.classList.toggle('off', !M.Crafting.can(rc));
+    });
+    el.oreHead.hidden = !M.Inventory.oreTotal && !Array.from(el.oreList.children).some((li) => !li.hidden);
+    el.matHead.hidden = !Array.from(el.matList.children).some((li) => !li.hidden);
+    el.craftHead.hidden = !Array.from(el.craftList.children).some((li) => !li.hidden);
   }
 
   function buildGauge() {
@@ -65,10 +94,10 @@
   const HUD = {
     init(h) {
       hooks = h;
-      ['sidebar', 'oreList', 'matList', 'oreTotal', 'depthVal', 'layerName', 'bestVal', 'gaugeBar',
+      ['sidebar', 'oreList', 'matList', 'craftList', 'toolName', 'oreHead', 'matHead', 'craftHead', 'oreTotal', 'depthVal', 'layerName', 'bestVal', 'gaugeBar',
         'marker', 'bestMark', 'banner', 'bannerTitle', 'bannerSub', 'overlay', 'panel', 'btnMute', 'btnPause'
       ].forEach((id) => { el[id] = $(id); });
-      buildSidebar(); buildGauge(); setSound();
+      buildSidebar(); buildCraft(); buildGauge(); setSound();
       el.btnPause.innerHTML = ICON.pause;
       el.btnPause.addEventListener('click', () => hooks.onPause());
       el.btnMute.addEventListener('click', () => HUD.toggleMute());
@@ -76,17 +105,21 @@
       E.on('inventory', (e) => {
         const r = rows[e.def.key]; if (!r) return;
         r.cnt.textContent = e.count;
-        r.li.hidden = false;
-        r.li.classList.remove('zero');
-        pop(r.li);
+        r.li.hidden = e.count === 0;
+        if (e.delta > 0) pop(r.li);
         el.oreTotal.textContent = e.oreTotal;
+        refreshCraft();
       });
+      E.on('selected', (k) => Object.keys(rows).forEach((n) => rows[n].li.classList.toggle('sel', n === k)));
+      E.on('moved', refreshCraft);
+      E.on('worldChanged', refreshCraft);
+      E.on('toolChanged', () => { el.toolName.textContent = M.Tools.list[M.Player.pick].name; refreshCraft(); });
       E.on('inventoryReset', () => {
         Object.keys(rows).forEach((k) => {
-          const r = rows[k]; r.cnt.textContent = '0';
-          if (r.li.classList.contains('mat')) r.li.hidden = true; else r.li.classList.add('zero');
+          const r = rows[k]; r.cnt.textContent = '0'; r.li.hidden = true;
         });
         el.oreTotal.textContent = '0';
+        refreshCraft();
       });
       E.on('depth', (e) => {
         el.depthVal.textContent = e.depth;
@@ -119,6 +152,8 @@
           '<p class="lead">Gali dari permukaan sampai inti bumi, ' + C.CORE_DEPTH + ' m ke bawah. Kumpulkan ore di sepanjang jalan.</p>' +
           '<dl class="help"><dt>Gerak dan gali</dt><dd>WASD atau tombol panah. Tahan untuk jalan atau gali terus.</dd>' +
           '<dt>Sentuh</dt><dd>Tahan jari ke arah yang dituju, atau pakai tombol arah.</dd>' +
+          '<dt>Tebang</dt><dd>Tabrak pohon dari samping: jatuh 3–10 kayu.</dd>' +
+          '<dt>Letakkan</dt><dd>Klik item di sidebar, lalu klik di area game (radius ' + C.BUILD_RADIUS + ' blok). Klik kanan: ambil workbench.</dd>' +
           '<dt>Jeda dan suara</dt><dd>P atau Esc untuk jeda, M untuk suara.</dd></dl>' +
           (d.best ? '<p class="best">Rekor kedalaman: <b>' + d.best + ' m</b></p>' : '') +
           '<button class="btn primary" data-act="start">Mulai menambang</button>';

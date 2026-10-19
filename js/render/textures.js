@@ -22,6 +22,13 @@
     const cell = (i, j, col) => { x.fillStyle = col; x.fillRect(e(i), e(j), e(i + 1) - e(i), e(j + 1) - e(j)); };
     const rc = () => 1 + ((rnd() * 6) | 0);
 
+    if (def.style === 'bench') {            // objek transparan: meja kerja
+      for (let j = 5; j < 8; j++) { cell(1, j, '#5a3a1c'); cell(6, j, '#5a3a1c'); }
+      for (let i = 0; i < 8; i++) { cell(i, 3, '#c78d4f'); cell(i, 4, def.color); }
+      cell(2, 2, '#9aa0b2'); cell(3, 2, '#8b6b4b'); cell(5, 2, '#c9d1d9');
+      return;
+    }
+
     const baseDef = def.ore ? Mat.byKey[def.host] : (def.style === 'grass' ? Mat.byKey.dirt : def);
     const vr = baseDef.variance * 255;
     for (let j = 0; j < g; j++) for (let i = 0; i < g; i++) cell(i, j, U.shade(baseDef.color, (rnd() - 0.5) * vr));
@@ -29,12 +36,33 @@
     if (def.style === 'grass') {
       for (let j = 0; j < 3; j++) for (let i = 0; i < g; i++) cell(i, j, U.shade(def.color, (rnd() - 0.5) * 30 + (j === 0 ? 18 : 0)));
       for (let i = 0; i < g; i++) if (rnd() < 0.55) cell(i, 3, U.shade(def.color, -12));
+    } else if (def.style === 'planks') {
+      for (let j = 2; j < g; j += 3) for (let i = 0; i < g; i++) cell(i, j, U.shade(def.color, -34));
+      for (let k = 0; k < 3; k++) cell(rc(), (rnd() * 8) | 0, U.shade(def.color, -20));
     } else if (def.style === 'magma') {
       for (let k = 0; k < 14; k++) cell(rc(), rc(), '#5a1a05');
       for (let k = 0; k < 9; k++) cell((rnd() * 8) | 0, (rnd() * 8) | 0, '#f97316');
       for (let k = 0; k < 5; k++) cell((rnd() * 8) | 0, (rnd() * 8) | 0, '#fcd34d');
     } else if (def.key === 'bedrock') {
       for (let k = 0; k < 10; k++) cell((rnd() * 8) | 0, (rnd() * 8) | 0, '#25262e');
+    } else if (def.ore && def.style === 'crystal') {   // kristal berfaset: sisi terang, tengah, gelap + kilap putih
+      const crystal = (ci, cj) => {
+        cell(ci, cj, U.mix(def.color, '#ffffff', 0.85)); cell(ci + 1, cj, U.mix(def.color, '#ffffff', 0.4));
+        cell(ci, cj + 1, def.color); cell(ci + 1, cj + 1, U.shade(def.color, -50));
+      };
+      for (let k = 0; k < 3; k++) crystal(1 + ((rnd() * 5) | 0), 1 + ((rnd() * 5) | 0));
+      cell(1 + ((rnd() * 6) | 0), 1 + ((rnd() * 6) | 0), '#ffffff');
+      if (def.gloss) for (let k = 0; k < 4; k++) cell(rc(), rc(), k % 2 ? '#ffffff' : '#c8fbff');
+    } else if (def.ore && def.style === 'metal') {      // lempeng logam abu-abu mengilap
+      for (let k = 0; k < 3; k++) {
+        const ci = 1 + ((rnd() * 4) | 0), cj = 1 + ((rnd() * 4) | 0);
+        for (let i = 0; i < 3; i++) {
+          cell(ci + i, cj, U.mix(def.color, '#ffffff', 0.55));
+          cell(ci + i, cj + 1, def.color);
+          cell(ci + i, cj + 2, U.shade(def.color, -55));
+        }
+        cell(ci + 2, cj, '#ffffff');
+      }
     } else if (def.ore) {
       const n = 3 + ((rnd() * 2) | 0);
       for (let k = 0; k < n; k++) {
@@ -120,6 +148,18 @@
     const def = Mat.byKey[key];
     const o = mk(16, 16);
     paintTile(o.x, 16, def, U.mulberry32(def.id * 977 + 1));
+    return o.c;
+  };
+
+  // Ikon pickaxe 16x16 untuk resep crafting: gagang kayu + kepala berwarna tier
+  Tx.toolIcon = function (tool) {
+    const o = mk(16, 16), x = o.x;
+    x.fillStyle = '#8b6b4b';
+    for (let i = 0; i < 10; i++) x.fillRect(3 + i, 13 - i, 2, 2);
+    [[4, 5], [6, 3], [8, 2], [10, 3], [12, 5], [13, 7]].forEach((p, i) => {
+      x.fillStyle = i < 3 ? U.mix(tool.color, '#ffffff', 0.3) : tool.color;
+      x.fillRect(p[0], p[1], 3, 3);
+    });
     return o.c;
   };
 

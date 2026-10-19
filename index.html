@@ -10,10 +10,12 @@
 <body>
 <div id="app">
   <aside id="sidebar" aria-label="Hasil tambang">
-    <h2 class="sb-head">Ore <b id="oreTotal">0</b></h2>
+    <h2 class="sb-head" id="oreHead" hidden>Ore <b id="oreTotal">0</b></h2>
     <ul id="oreList" class="rows"></ul>
-    <h2 class="sb-head sb-mat">Material</h2>
+    <h2 class="sb-head sb-mat" id="matHead" hidden>Material</h2>
     <ul id="matList" class="rows"></ul>
+    <h2 class="sb-head sb-mat sb-craft" id="craftHead" hidden>Crafting</h2>
+    <ul id="craftList" class="rows"></ul>
   </aside>
 
   <main id="stage">
@@ -22,7 +24,7 @@
     <div id="hud">
       <div class="chip" aria-live="off">
         <div class="depth"><span id="depthVal">0</span><small>m</small></div>
-        <div class="meta"><span id="layerName">Permukaan</span><span class="rec">Rekor <b id="bestVal">0</b> m</span></div>
+        <div class="meta"><span id="layerName">Permukaan</span><span class="tool" id="toolName"></span><span class="rec">Rekor <b id="bestVal">0</b> m</span></div>
       </div>
       <div class="actions">
         <button id="btnMute" class="iconbtn" aria-label="Suara"></button>
@@ -53,6 +55,7 @@
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/data/materials.js"></script>
+<script src="js/data/tools.js"></script>
 <script src="js/data/layers.js"></script>
 <script src="js/core/storage.js"></script>
 <script src="js/core/audio.js"></script>
@@ -61,6 +64,8 @@
 <script src="js/game/inventory.js"></script>
 <script src="js/game/effects.js"></script>
 <script src="js/game/player.js"></script>
+<script src="js/game/crafting.js"></script>
+<script src="js/game/build.js"></script>
 <script src="js/render/textures.js"></script>
 <script src="js/render/renderer.js"></script>
 <script src="js/ui/hud.js"></script>

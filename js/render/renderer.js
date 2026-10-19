@@ -12,7 +12,7 @@
 
   const R = {
     canvas: null, ctx: null, dpr: 1, T: 32, W: 0, H: 0,
-    cam: { x: 0, y: 0 },
+    cam: { x: 0, y: 0 }, ox: 0, oy: 0,
 
     init(canvas) {
       R.canvas = canvas;
@@ -54,6 +54,12 @@
       R.cam.y += (t.y - R.cam.y) * k;
     },
 
+    // sel dunia di bawah koordinat layar (px CSS klien); memakai offset gambar terakhir
+    cellAt(cx, cy) {
+      const b = R.canvas.getBoundingClientRect();
+      return { c: Math.floor(((cx - b.left) * R.dpr - R.ox) / R.T), r: Math.floor(((cy - b.top) * R.dpr - R.oy) / R.T) };
+    },
+
     // posisi pemain di layar dalam px CSS relatif ke area game (dipakai input sentuh)
     playerScreen() {
       const T = R.T;
@@ -69,6 +75,7 @@
       const sh = FX.shakeOffset();
       const ox = -Math.round(R.cam.x + sh.x * T), oy = -Math.round(R.cam.y + sh.y * T);
       const horizon = oy + S * T;
+      R.ox = ox; R.oy = oy;
 
       ctx.fillStyle = '#0b0c10';
       ctx.fillRect(0, 0, W, H);
@@ -77,15 +84,17 @@
       // ---- terrain ----
       ores.length = 0;
       const c0 = Math.floor(-ox / T), c1 = Math.ceil((W - ox) / T);
-      const r0 = Math.max(S, Math.floor(-oy / T)), r1 = Math.min(World.rows - 1, Math.ceil((H - oy) / T));
+      const r0 = Math.max(0, Math.floor(-oy / T)), r1 = Math.min(World.rows - 1, Math.ceil((H - oy) / T));
       for (let r = r0; r <= r1; r++) {
         const layer = World.layerAt(r);
         for (let c = c0; c <= c1; c++) {
           const x = c * T + ox, y = r * T + oy;
-          if (c < 0 || c >= World.cols) { ctx.drawImage(Tx.tile(Mat.byKey.bedrock.id, (c + r) & 3), x, y); continue; }
+          if (c < 0 || c >= World.cols) { if (r >= S) ctx.drawImage(Tx.tile(Mat.byKey.bedrock.id, (c + r) & 3), x, y); continue; }
           const id = World.get(c, r), v = World.variantAt(c, r);
-          if (id === 0) { ctx.drawImage(Tx.wall(layer.id, v), x, y); continue; }
+          const def0 = id ? Mat.get(id) : null;
+          if (!id || def0.solid === false) { if (r >= S) ctx.drawImage(Tx.wall(layer.id, v), x, y); if (!id) continue; }
           ctx.drawImage(Tx.tile(id, v), x, y);
+          if (def0.solid === false) continue;
           const dmg = World.damageAt(c, r);
           if (dmg > 0.02) ctx.drawImage(Tx.crack(Math.floor(dmg * 4)), x, y);
           const def = Mat.get(id);
@@ -98,16 +107,30 @@
       if (tg) {
         const x = tg.col * T + ox, y = tg.row * T + oy;
         const lw = Math.max(2, Math.round(T / 14));
-        ctx.strokeStyle = 'rgba(255,224,138,0.95)';
+        ctx.strokeStyle = tg.locked ? 'rgba(255,100,90,0.95)' : 'rgba(255,224,138,0.95)';
         ctx.lineWidth = lw;
         ctx.strokeRect(x + lw / 2, y + lw / 2, T - lw, T - lw);
         const dmg = U.clamp(World.damageAt(tg.col, tg.row), 0, 1);
-        if (dmg > 0.04) {
+        if (!tg.locked && dmg > 0.04) {
           const bw = T * 0.8, bh = Math.max(4, Math.round(T * 0.12));
           const bx = x + (T - bw) / 2, by = y - bh - Math.round(T * 0.1);
           ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
           ctx.fillStyle = tg.def.ore ? tg.def.glow : '#ffd166';
           ctx.fillRect(bx, by, Math.round(bw * dmg), bh);
+        }
+      }
+
+      // ---- bayangan item yang akan diletakkan ----
+      const held = M.Build.held();
+      if (held) {
+        const h = M.Input.hover;
+        if (h) {
+          const p = R.cellAt(h.x, h.y), ok = M.Build.canPlace(p.c, p.r, held);
+          const gx = p.c * T + ox, gy = p.r * T + oy, lw = Math.max(2, Math.round(T / 14));
+          ctx.globalAlpha = 0.6; ctx.drawImage(Tx.tile(held.id, 0), gx, gy); ctx.globalAlpha = 1;
+          ctx.fillStyle = ok ? 'rgba(90,255,130,0.22)' : 'rgba(255,70,70,0.38)'; ctx.fillRect(gx, gy, T, T);
+          ctx.strokeStyle = ok ? '#7dff9a' : '#ff6a6a'; ctx.lineWidth = lw;
+          ctx.strokeRect(gx + lw / 2, gy + lw / 2, T - lw, T - lw);
         }
       }
 
@@ -172,7 +195,7 @@
   };
 
   function drawSky(ctx, ox, oy, horizon, W, H, T) {
-    const g = ctx.createLinearGradient(0, oy, 0, horizon);
+    const g = ctx.createLinearGradient(0, horizon - T * 16, 0, horizon);
     g.addColorStop(0, '#1d2650'); g.addColorStop(0.55, '#6a4b7d'); g.addColorStop(1, '#f2a863');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, Math.min(H, horizon));
@@ -193,19 +216,33 @@
       }
       ctx.lineTo(W + T, horizon); ctx.closePath(); ctx.fill();
     });
-    // pohon pinus
+    // pohon (bisa ditebang)
     World.trees.forEach((tr) => {
       const x = tr.c * T + ox;
-      if (x < -T || x > W + T) return;
-      const trunk = Math.round(T * 0.5);
-      ctx.fillStyle = '#5b3d23';
-      ctx.fillRect(x + Math.round(T * 0.4), horizon - trunk, Math.round(T * 0.2), trunk);
-      for (let i = 0; i < tr.h; i++) {
-        const w = T * (1.25 - i * 0.28), hh = T * 0.6;
-        const y = horizon - trunk - hh * (i + 1) + T * 0.2 * i;
-        ctx.fillStyle = '#25583a'; ctx.fillRect(Math.round(x + (T - w) / 2), Math.round(y), Math.round(w), Math.round(hh));
-        ctx.fillStyle = '#34794b'; ctx.fillRect(Math.round(x + (T - w) / 2), Math.round(y), Math.round(w * 0.45), Math.round(hh));
+      if (x < -T * 3 || x > W + T * 2) return;
+      if (tr.chopped) {                     // sapling + progres tumbuh
+        const k = Math.min(1, tr.growT / C.TREE_REGROW);
+        const sh = Math.round(T * (0.25 + 0.2 * k)), sw = Math.max(2, Math.round(T * 0.08)), mx = Math.round(x + T / 2);
+        ctx.fillStyle = '#6b4524'; ctx.fillRect(mx - Math.round(sw / 2), horizon - sh, sw, sh);
+        ctx.fillStyle = '#42904f';
+        ctx.fillRect(mx - Math.round(T * 0.18), horizon - sh - Math.round(T * 0.1), Math.round(T * 0.36), Math.round(T * 0.14));
+        ctx.fillRect(mx - Math.round(T * 0.08), horizon - sh - Math.round(T * 0.22), Math.round(T * 0.16), Math.round(T * 0.12));
+        const bw = Math.round(T * 0.6), bh = Math.max(3, Math.round(T * 0.08)), bx = Math.round(x + (T - bw) / 2), by = horizon - Math.round(T * 0.8);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        ctx.fillStyle = '#9be37a'; ctx.fillRect(bx, by, Math.round(bw * k), bh);
+        return;
       }
+      const tw = Math.round(T * 0.36), tx = Math.round(x + (T - tw) / 2), th = Math.round(tr.h * T), top = horizon - th;
+      ctx.fillStyle = '#6b4524'; ctx.fillRect(tx, top, tw, th);
+      ctx.fillStyle = '#8a5b32'; ctx.fillRect(tx, top, Math.max(1, Math.round(tw * 0.4)), th);
+      ctx.fillStyle = '#4e3219'; ctx.fillRect(tx - Math.round(T * 0.06), horizon - Math.round(T * 0.18), tw + Math.round(T * 0.12), Math.round(T * 0.18));
+      [[2.0, -1.9], [3.2, -1.2], [3.4, -0.5], [2.4, 0.15]].forEach((q) => {
+        const w = Math.round(T * q[0]), hh = Math.round(T * 0.8), lx = Math.round(x + T / 2 - w / 2), ly = Math.round(top + T * q[1]);
+        ctx.fillStyle = '#2f6b3a'; ctx.fillRect(lx, ly, w, hh);
+        ctx.fillStyle = '#42904f'; ctx.fillRect(lx, ly, Math.round(w * 0.4), hh);
+      });
+      const dm = World.damageAt(tr.c, S - 1);
+      if (dm > 0.02) { ctx.fillStyle = 'rgba(0,0,0,' + (Math.min(dm, 1) * 0.4).toFixed(2) + ')'; ctx.fillRect(tx, top, tw, th); }
     });
   }
 
@@ -231,6 +268,14 @@
     R2(3, 1, 6, 0.9, '#f6cf6e');
     R2(fx(7.4, 2), 1.6, 2, 1.4, '#fff3b0'); // lampu helm
 
+    // item terpilih menggantikan pickaxe
+    const sel = M.Inventory.selected;
+    if (sel) {
+      const s = Math.round(5 * u);
+      ctx.drawImage(Tx.tile(Mat.byKey[sel].id, 0), Math.round(x + (f > 0 ? 7 : 0) * u), Math.round(y + 5.2 * u + bob), s, s);
+      return;
+    }
+
     // pickaxe: berayun ke arah gali
     const a = Player.aim;
     let base = f > 0 ? -0.9 : Math.PI + 0.9;
@@ -243,8 +288,9 @@
     ctx.translate(Math.round(x + 6 * u), Math.round(y + 7 * u + bob));
     ctx.rotate(base + swing);
     ctx.fillStyle = '#8b6b4b'; ctx.fillRect(0, -Math.round(u * 0.4), Math.round(6 * u), Math.max(1, Math.round(u * 0.9)));
-    ctx.fillStyle = '#c9d1d9'; ctx.fillRect(Math.round(5 * u), -Math.round(u * 2), Math.max(2, Math.round(u * 1.3)), Math.round(4 * u));
-    ctx.fillStyle = '#8b96a3'; ctx.fillRect(Math.round(5 * u), -Math.round(u * 2), Math.max(1, Math.round(u * 0.5)), Math.round(4 * u));
+    const pc = M.Tools.list[Player.pick].color;
+    ctx.fillStyle = pc; ctx.fillRect(Math.round(5 * u), -Math.round(u * 2), Math.max(2, Math.round(u * 1.3)), Math.round(4 * u));
+    ctx.fillStyle = U.shade(pc, -50); ctx.fillRect(Math.round(5 * u), -Math.round(u * 2), Math.max(1, Math.round(u * 0.5)), Math.round(4 * u));
     ctx.restore();
   }
 

@@ -13,6 +13,7 @@
     arrowup: 'up', w: 'up', arrowdown: 'down', s: 'down'
   };
   let held = [];
+  let hover = null;        // posisi kursor terakhir (px klien), untuk bayangan item
   let ptr = null;          // { x, y } posisi pointer yang sedang ditahan di area game
   let getPlayerScreen = null;
 
@@ -35,6 +36,7 @@
 
   M.Input = {
     clear() { held = []; ptr = null; },
+    get hover() { return hover; },
     update() { aim(); },
     direction() { const h = held[held.length - 1]; return h ? DIRS[h.dir] : null; },
 
@@ -81,14 +83,18 @@
       const stop = () => { ptr = null; releaseSource('ptr'); };
       view.addEventListener('pointerdown', (e) => {
         M.Audio.init();
+        hover = { x: e.clientX, y: e.clientY };
+        if (e.button !== 0) return;
+        if (M.Build.active()) { M.Build.placeAt(e.clientX, e.clientY); return; }   // mode meletakkan item
         try { view.setPointerCapture(e.pointerId); } catch (err) { /* abaikan */ }
         ptr = { x: e.clientX, y: e.clientY };
       });
-      view.addEventListener('pointermove', (e) => { if (ptr) ptr = { x: e.clientX, y: e.clientY }; });
+      view.addEventListener('pointermove', (e) => { hover = { x: e.clientX, y: e.clientY }; if (ptr) ptr = { x: e.clientX, y: e.clientY }; });
+      view.addEventListener('pointerleave', () => { hover = null; });
       view.addEventListener('pointerup', stop);
       view.addEventListener('pointercancel', stop);
       view.addEventListener('lostpointercapture', stop);
-      view.addEventListener('contextmenu', (e) => e.preventDefault());
+      view.addEventListener('contextmenu', (e) => { e.preventDefault(); M.Build.pickupAt(e.clientX, e.clientY); });
     }
   };
 })(window.MTC = window.MTC || {});

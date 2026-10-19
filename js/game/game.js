@@ -10,6 +10,7 @@
     init() {
       Game.best = M.Storage.data.bestDepth || 0;
       E.on('blockBroken', Game.onBroken);
+      E.on('treeChopped', Game.onTree);
       E.on('moved', Game.checkDepth);
       document.addEventListener('visibilitychange', () => { if (document.hidden) Game.pause(); });
       window.addEventListener('pagehide', () => M.Storage.save());
@@ -55,6 +56,14 @@
       }
     },
 
+    onTree(e) {
+      const n = 3 + ((Math.random() * 8) | 0);          // 3-10 kayu
+      Inv.add('wood', n);
+      FX.breakBurst(e.col, e.row, Mat.byKey.wood);
+      FX.floatText(e.col, e.row - 1, '+' + n + ' Wood', '#e0a867', true);
+      Audio.ore(null);
+    },
+
     checkDepth() {
       const d = World.depthOf(Player.row);
       if (d === Game.depth) return;
@@ -91,6 +100,7 @@
         Game.elapsed += dt;
         Input.update();
         Player.update(dt);
+        World.updateTrees(dt);
       }
       if (Game.state !== 'paused') FX.update(dt);
       R.update(dt);

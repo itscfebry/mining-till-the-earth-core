@@ -35,11 +35,18 @@
   register({ key: 'core',          name: 'Core Rock',  hardness: 2.50, color: '#c2410c', variance: 0.10, style: 'magma' });
   register({ key: 'bedrock',       name: 'Bedrock',    hardness: Infinity, color: '#16171c', variance: 0.08, unbreakable: true });
 
-  // ---- ore ----
-  register({ key: 'copper',   name: 'Copper',   ore: true, host: 'stone',      hardness: 0.70, color: '#e08a40', glow: '#ffa24a' });
-  register({ key: 'tin',      name: 'Tin',      ore: true, host: 'stone',      hardness: 0.75, color: '#c3ccd6', glow: '#e3ebf3' });
-  register({ key: 'iron',     name: 'Iron',     ore: true, host: 'stone',      hardness: 0.95, color: '#c99d74', glow: '#e8bf95' });
-  register({ key: 'tungsten', name: 'Tungsten', ore: true, host: 'granite',    hardness: 1.40, color: '#7fa2cc', glow: '#9cc0ea' });
-  register({ key: 'platinum', name: 'Platinum', ore: true, host: 'basalt',     hardness: 1.90, color: '#e4f3ff', glow: '#bfe6ff', rare: true });
-  register({ key: 'titanium', name: 'Titanium', ore: true, host: 'blackstone', hardness: 3.00, color: '#8ea8ff', glow: '#a9bdff', rare: true });
+  // ---- kayu & objek (solid:false = bisa dilewati; placeable item otomatis bisa diletakkan) ----
+  register({ key: 'wood',      name: 'Wood',      hardness: 0.30, color: '#b07a43', variance: 0.08, style: 'planks' });
+  register({ key: 'workbench', name: 'Workbench', hardness: 0.30, color: '#8a5a2b', style: 'bench', solid: false });
+
+  // ---- ore (tier = urutan pickaxe, lihat data/tools.js) ----
+  register({ key: 'copper',   name: 'Copper',   tier: 1, ore: true, host: 'stone',         hardness: 0.70, color: '#e08a40', glow: '#ffa24a' });
+  register({ key: 'tin',      name: 'Tin',      tier: 2, ore: true, host: 'stone',         hardness: 0.75, color: '#c3ccd6', glow: '#e3ebf3' });
+  register({ key: 'iron',     name: 'Iron',     tier: 3, ore: true, host: 'stone',         hardness: 0.95, color: '#c99d74', glow: '#e8bf95' });
+  register({ key: 'gold',     name: 'Gold',     tier: 4, ore: true, host: 'hardenedStone', hardness: 1.15, color: '#ffd24a', glow: '#fff08a' });
+  register({ key: 'tungsten', name: 'Tungsten', tier: 5, ore: true, host: 'granite',       hardness: 1.40, color: '#7fa2cc', glow: '#9cc0ea' });
+  register({ key: 'platinum', name: 'Platinum', tier: 6, ore: true, host: 'basalt',        hardness: 1.90, color: '#e4f3ff', glow: '#bfe6ff', rare: true });
+  register({ key: 'cobalt',   name: 'Cobalt',   tier: 7, ore: true, host: 'deepstone',     hardness: 2.30, color: '#2d9cff', glow: '#8fd6ff', rare: true, style: 'crystal' });
+  register({ key: 'titanium', name: 'Titanium', tier: 8, ore: true, host: 'blackstone',    hardness: 3.00, color: '#9aa3ad', glow: '#d3dae1', rare: true, style: 'metal' });
+  register({ key: 'osmium',   name: 'Osmium',   tier: 9, ore: true, host: 'blackstone',    hardness: 3.60, color: '#9ff3ff', glow: '#eaffff', rare: true, style: 'crystal', gloss: true });
 })(window.MTC = window.MTC || {});

@@ -39,7 +39,19 @@
     inBounds: inBounds,
     // Di luar dunia dianggap bedrock (solid & tak bisa digali)
     get(c, r) { return inBounds(c, r) ? tiles[r * COLS + c] : BEDROCK; },
-    isSolid(c, r) { return World.get(c, r) !== 0; },
+    isSolid(c, r) { const id = World.get(c, r); return id !== 0 && Mat.list[id].solid !== false; },
+    set(c, r, id) { const i = r * COLS + c; tiles[i] = id; damage[i] = 0; },
+    treeAt(c) { return World.trees.find((t) => t.c === c && !t.chopped) || null; },   // pohon dewasa
+    treeAny(c) { return World.trees.find((t) => t.c === c) || null; },                // termasuk sapling
+    // pohon ditebang -> tersisa sapling yang tumbuh lagi setelah TREE_REGROW detik
+    removeTree(t) { t.chopped = true; t.growT = 0; damage[(S - 1) * COLS + t.c] = 0; },
+    updateTrees(dt) {
+      for (const t of World.trees) {
+        if (!t.chopped) continue;
+        t.growT += dt;
+        if (t.growT >= C.TREE_REGROW) { t.chopped = false; t.h = 3 + ((Math.random() * 2) | 0); damage[(S - 1) * COLS + t.c] = 0; }
+      }
+    },
     variantAt(c, r) { return variant[r * COLS + c]; },
     damageAt(c, r) { return damage[r * COLS + c]; },
     addDamage(c, r, amount) { const i = r * COLS + c; damage[i] += amount; return damage[i]; },
@@ -82,13 +94,16 @@
           }
         }
       }
-      // 4) pohon dekoratif di permukaan (jauh dari titik spawn)
+      // 4) pohon di permukaan (bisa ditebang; jauh dari titik spawn)
       World.trees = [];
       let last = -9;
       for (let c = 2; c < COLS - 2; c++) {
-        if (Math.abs(c - C.SPAWN_COL) <= 2 || c - last < 3) continue;
-        if (rnd() < 0.3) { World.trees.push({ c: c, h: 2 + ((rnd() * 2) | 0) }); last = c; }
+        if (Math.abs(c - C.SPAWN_COL) <= 3 || c - last < 4) continue;
+        if (rnd() < 0.5) { World.trees.push({ c: c, h: 3 + ((rnd() * 2) | 0) }); last = c; }
       }
+      if (World.trees.length < 3) World.trees = [{ c: 5, h: 3 }, { c: 11, h: 4 }, { c: 24, h: 3 }];
+      // 5) crafting bench awal tepat di tengah dunia
+      tiles[(S - 1) * COLS + C.SPAWN_COL] = Mat.byKey.workbench.id;
     }
   };
   M.World = World;
